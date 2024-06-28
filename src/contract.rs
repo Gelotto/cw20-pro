@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::execute::before_burn::before_burn;
 use crate::execute::before_transfer::before_transfer;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, ProQueryMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, ProQueryMsg, QueryMsg, TokenFactoryExecuteMsg};
 use crate::query::query_balances;
 use crate::state;
 use cosmwasm_std::{entry_point, to_json_binary};
@@ -34,8 +34,13 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    // Route msg to inherited CW20-base functions
     match msg {
+        // Route tokenfactory-related msgs
+        ExecuteMsg::TokenFactory(msg) => match msg {
+            TokenFactoryExecuteMsg::Airdrop {} => todo!(),
+        },
+
+        // Inherited CW20-base functions
         ExecuteMsg::Transfer { recipient, amount } => {
             before_transfer(deps.storage, deps.api, &info.sender, &recipient, amount)?;
             Ok(execute_transfer(deps, env, info, recipient, amount)?)

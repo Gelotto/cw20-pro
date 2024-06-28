@@ -1,9 +1,6 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, Timestamp, Uint128, Uint64};
+use cosmwasm_std::{Addr, Binary, Uint128};
 use cw20::Expiration;
-use nois::NoisCallback;
-
-use crate::state::models::RaffleStatus;
 
 pub const MIN_LOCKUP_SECONDS: u64 = 60 * 60; // one hour
 
@@ -11,7 +8,15 @@ pub const MIN_LOCKUP_SECONDS: u64 = 60 * 60; // one hour
 pub struct InstantiateMsg {}
 
 #[cw_serde]
+pub enum TokenFactoryExecuteMsg {
+    Airdrop {},
+}
+
+#[cw_serde]
 pub enum ExecuteMsg {
+    /// Tokenfactory-related functions
+    TokenFactory(TokenFactoryExecuteMsg),
+
     /// Implements CW20. Transfer is a base message to move tokens to another account without triggering actions
     Transfer { recipient: String, amount: Uint128 },
     /// Implements CW20. Burn is a base message to destroy tokens forever
