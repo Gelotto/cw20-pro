@@ -1,18 +1,16 @@
 use crate::{
     error::ContractError,
-    state::storage::{FACTORY, FULL_DENOM},
+    state::tf::{TF_FACTORY, TF_FULL_DENOM},
 };
-use cosmwasm_std::{attr, Addr, Response};
+use cosmwasm_std::{attr, Addr, DepsMut, Env, Response};
 
-use super::Context;
-
-pub fn exec_set_denom_admin(
-    ctx: Context,
+pub fn exec_tf_set_admin(
+    deps: DepsMut,
+    env: Env,
     new_admin: Addr,
 ) -> Result<Response, ContractError> {
-    let Context { deps, env, .. } = ctx;
-    let factory = FACTORY.load(deps.storage)?;
-    let denom = FULL_DENOM.load(deps.storage)?;
+    let factory = TF_FACTORY.load(deps.storage)?;
+    let denom = TF_FULL_DENOM.load(deps.storage)?;
 
     Ok(Response::new()
         .add_attributes(vec![attr("action", "set_denom_admin")])

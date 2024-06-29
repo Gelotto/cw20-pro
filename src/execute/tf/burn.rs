@@ -1,20 +1,18 @@
 use crate::{
     error::ContractError,
-    state::storage::{AMOUNT_BURNED, FACTORY, FULL_DENOM},
+    state::tf::{TF_AMOUNT_BURNED, TF_FACTORY, TF_FULL_DENOM},
 };
-use cosmwasm_std::{attr, Response, StdError, Uint128};
+use cosmwasm_std::{attr, DepsMut, Env, Response, StdError, Uint128};
 
-use super::Context;
-
-pub fn exec_burn(
-    ctx: Context,
+pub fn exec_tf_burn(
+    deps: DepsMut,
+    env: Env,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let Context { deps, env, .. } = ctx;
-    let factory = FACTORY.load(deps.storage)?;
-    let denom = FULL_DENOM.load(deps.storage)?;
+    let factory = TF_FACTORY.load(deps.storage)?;
+    let denom = TF_FULL_DENOM.load(deps.storage)?;
 
-    AMOUNT_BURNED.update(deps.storage, |n| -> Result<_, ContractError> {
+    TF_AMOUNT_BURNED.update(deps.storage, |n| -> Result<_, ContractError> {
         Ok(n.checked_add(amount.into())
             .map_err(|e| ContractError::Std(StdError::overflow(e)))?)
     })?;

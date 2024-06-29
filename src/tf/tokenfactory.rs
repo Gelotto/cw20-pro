@@ -63,24 +63,20 @@ impl TokenFactoryType {
         amount: Uint128,
     ) -> CosmosMsg {
         match self {
-            TokenFactoryType::CosmWasm => {
-                <cosmos::denom::MsgBurn as Into<CosmosMsg>>::into(cosmos::denom::MsgBurn {
-                    sender: address.to_string(),
-                    amount: Some(cosmos::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
-            TokenFactoryType::Kujira => {
-                <kujira::denom::MsgBurn as Into<CosmosMsg>>::into(kujira::denom::MsgBurn {
-                    sender: address.to_string(),
-                    amount: Some(kujira::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
+            TokenFactoryType::CosmWasm => <cosmos::denom::MsgBurn as Into<CosmosMsg>>::into(cosmos::denom::MsgBurn {
+                sender: address.to_string(),
+                amount: Some(cosmos::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
+            TokenFactoryType::Kujira => <kujira::denom::MsgBurn as Into<CosmosMsg>>::into(kujira::denom::MsgBurn {
+                sender: address.to_string(),
+                amount: Some(kujira::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
             TokenFactoryType::Injective => {
                 <injective::denom::MsgBurn as Into<CosmosMsg>>::into(injective::denom::MsgBurn {
                     sender: address.to_string(),
@@ -90,25 +86,21 @@ impl TokenFactoryType {
                     }),
                 })
             },
-            TokenFactoryType::Osmosis => {
-                <osmosis::denom::MsgBurn as Into<CosmosMsg>>::into(osmosis::denom::MsgBurn {
-                    sender: address.to_string(),
-                    amount: Some(osmosis::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                    burn_from_address: address.to_string(),
-                })
-            },
-            TokenFactoryType::Juno => {
-                <juno::denom::MsgBurn as Into<CosmosMsg>>::into(juno::denom::MsgBurn {
-                    sender: address.to_string(),
-                    amount: Some(juno::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
+            TokenFactoryType::Osmosis => <osmosis::denom::MsgBurn as Into<CosmosMsg>>::into(osmosis::denom::MsgBurn {
+                sender: address.to_string(),
+                amount: Some(osmosis::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+                burn_from_address: address.to_string(),
+            }),
+            TokenFactoryType::Juno => <juno::denom::MsgBurn as Into<CosmosMsg>>::into(juno::denom::MsgBurn {
+                sender: address.to_string(),
+                amount: Some(juno::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
         }
     }
 
@@ -119,25 +111,21 @@ impl TokenFactoryType {
         amount: Uint128,
     ) -> CosmosMsg {
         match self {
-            TokenFactoryType::CosmWasm => {
-                <cosmos::denom::MsgMint as Into<CosmosMsg>>::into(cosmos::denom::MsgMint {
-                    sender: sender.to_string(),
-                    amount: Some(cosmos::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
-            TokenFactoryType::Kujira => {
-                <kujira::denom::MsgMint as Into<CosmosMsg>>::into(kujira::denom::MsgMint {
-                    sender: sender.to_string(),
-                    amount: Some(kujira::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                    recipient: sender.to_string(),
-                })
-            },
+            TokenFactoryType::CosmWasm => <cosmos::denom::MsgMint as Into<CosmosMsg>>::into(cosmos::denom::MsgMint {
+                sender: sender.to_string(),
+                amount: Some(cosmos::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
+            TokenFactoryType::Kujira => <kujira::denom::MsgMint as Into<CosmosMsg>>::into(kujira::denom::MsgMint {
+                sender: sender.to_string(),
+                amount: Some(kujira::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+                recipient: sender.to_string(),
+            }),
             TokenFactoryType::Injective => {
                 <injective::denom::MsgMint as Into<CosmosMsg>>::into(injective::denom::MsgMint {
                     sender: sender.to_string(),
@@ -148,24 +136,20 @@ impl TokenFactoryType {
                     mint_to_address: sender.to_string(),
                 })
             },
-            TokenFactoryType::Osmosis => {
-                <osmosis::denom::MsgMint as Into<CosmosMsg>>::into(osmosis::denom::MsgMint {
-                    sender: sender.to_string(),
-                    amount: Some(osmosis::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
-            TokenFactoryType::Juno => {
-                <juno::denom::MsgMint as Into<CosmosMsg>>::into(juno::denom::MsgMint {
-                    sender: sender.to_string(),
-                    amount: Some(juno::denom::Coin {
-                        denom: denom.to_string(),
-                        amount: amount.to_string(),
-                    }),
-                })
-            },
+            TokenFactoryType::Osmosis => <osmosis::denom::MsgMint as Into<CosmosMsg>>::into(osmosis::denom::MsgMint {
+                sender: sender.to_string(),
+                amount: Some(osmosis::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
+            TokenFactoryType::Juno => <juno::denom::MsgMint as Into<CosmosMsg>>::into(juno::denom::MsgMint {
+                sender: sender.to_string(),
+                amount: Some(juno::denom::Coin {
+                    denom: denom.to_string(),
+                    amount: amount.to_string(),
+                }),
+            }),
         }
     }
 
@@ -176,43 +160,41 @@ impl TokenFactoryType {
         new_admin: Addr,
     ) -> CosmosMsg {
         match self {
-            TokenFactoryType::CosmWasm => <cosmos::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(
-                cosmos::denom::MsgChangeAdmin {
+            TokenFactoryType::CosmWasm => {
+                <cosmos::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(cosmos::denom::MsgChangeAdmin {
                     sender: sender.to_string(),
                     denom: denom.to_string(),
                     new_admin: new_admin.to_string(),
-                },
-            ),
-            TokenFactoryType::Kujira => <kujira::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(
-                kujira::denom::MsgChangeAdmin {
-                    sender: sender.to_string(),
-                    denom: denom.to_string(),
-                    new_admin: new_admin.to_string(),
-                },
-            ),
-            TokenFactoryType::Injective => {
-                <injective::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(
-                    injective::denom::MsgChangeAdmin {
-                        sender: sender.to_string(),
-                        denom: denom.to_string(),
-                        new_admin: new_admin.to_string(),
-                    },
-                )
+                })
             },
-            TokenFactoryType::Osmosis => <osmosis::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(
-                osmosis::denom::MsgChangeAdmin {
+            TokenFactoryType::Kujira => {
+                <kujira::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(kujira::denom::MsgChangeAdmin {
                     sender: sender.to_string(),
                     denom: denom.to_string(),
                     new_admin: new_admin.to_string(),
-                },
-            ),
-            TokenFactoryType::Juno => <juno::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(
-                juno::denom::MsgChangeAdmin {
+                })
+            },
+            TokenFactoryType::Injective => {
+                <injective::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(injective::denom::MsgChangeAdmin {
                     sender: sender.to_string(),
                     denom: denom.to_string(),
                     new_admin: new_admin.to_string(),
-                },
-            ),
+                })
+            },
+            TokenFactoryType::Osmosis => {
+                <osmosis::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(osmosis::denom::MsgChangeAdmin {
+                    sender: sender.to_string(),
+                    denom: denom.to_string(),
+                    new_admin: new_admin.to_string(),
+                })
+            },
+            TokenFactoryType::Juno => {
+                <juno::denom::MsgChangeAdmin as Into<CosmosMsg>>::into(juno::denom::MsgChangeAdmin {
+                    sender: sender.to_string(),
+                    denom: denom.to_string(),
+                    new_admin: new_admin.to_string(),
+                })
+            },
         }
     }
 
@@ -222,38 +204,36 @@ impl TokenFactoryType {
         subdenom: &str,
     ) -> CosmosMsg {
         match self {
-            TokenFactoryType::CosmWasm => <cosmos::denom::MsgCreateDenom as Into<CosmosMsg>>::into(
-                cosmos::denom::MsgCreateDenom {
+            TokenFactoryType::CosmWasm => {
+                <cosmos::denom::MsgCreateDenom as Into<CosmosMsg>>::into(cosmos::denom::MsgCreateDenom {
                     sender: address.to_string(),
                     subdenom: subdenom.to_string(),
-                },
-            ),
-            TokenFactoryType::Kujira => <kujira::denom::MsgCreateDenom as Into<CosmosMsg>>::into(
-                kujira::denom::MsgCreateDenom {
-                    sender: address.to_string(),
-                    subdenom: subdenom.to_string(),
-                },
-            ),
-            TokenFactoryType::Injective => {
-                <injective::denom::MsgCreateDenom as Into<CosmosMsg>>::into(
-                    injective::denom::MsgCreateDenom {
-                        sender: address.to_string(),
-                        subdenom: subdenom.to_string(),
-                    },
-                )
+                })
             },
-            TokenFactoryType::Osmosis => <osmosis::denom::MsgCreateDenom as Into<CosmosMsg>>::into(
-                osmosis::denom::MsgCreateDenom {
+            TokenFactoryType::Kujira => {
+                <kujira::denom::MsgCreateDenom as Into<CosmosMsg>>::into(kujira::denom::MsgCreateDenom {
                     sender: address.to_string(),
                     subdenom: subdenom.to_string(),
-                },
-            ),
-            TokenFactoryType::Juno => <juno::denom::MsgCreateDenom as Into<CosmosMsg>>::into(
-                juno::denom::MsgCreateDenom {
+                })
+            },
+            TokenFactoryType::Injective => {
+                <injective::denom::MsgCreateDenom as Into<CosmosMsg>>::into(injective::denom::MsgCreateDenom {
                     sender: address.to_string(),
                     subdenom: subdenom.to_string(),
-                },
-            ),
+                })
+            },
+            TokenFactoryType::Osmosis => {
+                <osmosis::denom::MsgCreateDenom as Into<CosmosMsg>>::into(osmosis::denom::MsgCreateDenom {
+                    sender: address.to_string(),
+                    subdenom: subdenom.to_string(),
+                })
+            },
+            TokenFactoryType::Juno => {
+                <juno::denom::MsgCreateDenom as Into<CosmosMsg>>::into(juno::denom::MsgCreateDenom {
+                    sender: address.to_string(),
+                    subdenom: subdenom.to_string(),
+                })
+            },
         }
     }
 
@@ -264,43 +244,35 @@ impl TokenFactoryType {
     ) -> CosmosMsg {
         match self {
             TokenFactoryType::CosmWasm => {
-                <cosmos::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
-                    cosmos::denom::MsgSetDenomMetadata {
-                        sender: address.to_string(),
-                        metadata: Some(metadata),
-                    },
-                )
+                <cosmos::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(cosmos::denom::MsgSetDenomMetadata {
+                    sender: address.to_string(),
+                    metadata: Some(metadata),
+                })
             },
             TokenFactoryType::Kujira => {
-                <kujira::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
-                    kujira::denom::MsgSetDenomMetadata {
-                        sender: address.to_string(),
-                        metadata: Some(metadata),
-                    },
-                )
+                <kujira::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(kujira::denom::MsgSetDenomMetadata {
+                    sender: address.to_string(),
+                    metadata: Some(metadata),
+                })
             },
-            TokenFactoryType::Injective => {
-                <injective::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
-                    injective::denom::MsgSetDenomMetadata {
-                        sender: address.to_string(),
-                        metadata: Some(metadata),
-                    },
-                )
-            },
-            TokenFactoryType::Osmosis => {
-                <osmosis::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
-                    osmosis::denom::MsgSetDenomMetadata {
-                        sender: address.to_string(),
-                        metadata: Some(metadata),
-                    },
-                )
-            },
-            TokenFactoryType::Juno => <juno::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
-                juno::denom::MsgSetDenomMetadata {
+            TokenFactoryType::Injective => <injective::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(
+                injective::denom::MsgSetDenomMetadata {
                     sender: address.to_string(),
                     metadata: Some(metadata),
                 },
             ),
+            TokenFactoryType::Osmosis => {
+                <osmosis::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(osmosis::denom::MsgSetDenomMetadata {
+                    sender: address.to_string(),
+                    metadata: Some(metadata),
+                })
+            },
+            TokenFactoryType::Juno => {
+                <juno::denom::MsgSetDenomMetadata as Into<CosmosMsg>>::into(juno::denom::MsgSetDenomMetadata {
+                    sender: address.to_string(),
+                    metadata: Some(metadata),
+                })
+            },
         }
     }
 

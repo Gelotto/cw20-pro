@@ -47,6 +47,15 @@ pub enum ContractError {
 
     #[error("Duplicate initial balance addresses")]
     DuplicateInitialBalanceAddresses {},
+
+    #[error("Logo binary data exceeds 5KB limit")]
+    LogoTooBig {},
+
+    #[error("Invalid xml preamble for SVG")]
+    InvalidXmlPreamble {},
+
+    #[error("Invalid png header")]
+    InvalidPngHeader {},
 }
 
 impl From<ContractError> for StdError {
@@ -62,9 +71,7 @@ impl From<cw20_base::ContractError> for ContractError {
             cw20_base::ContractError::Unauthorized {} => ContractError::Unauthorized {
                 reason: "not authorized".to_owned(),
             },
-            cw20_base::ContractError::CannotSetOwnAccount {} => {
-                ContractError::CannotSetOwnAccount {}
-            },
+            cw20_base::ContractError::CannotSetOwnAccount {} => ContractError::CannotSetOwnAccount {},
             cw20_base::ContractError::InvalidExpiration {} => ContractError::InvalidExpiration {},
             cw20_base::ContractError::Expired {} => ContractError::Expired {},
             cw20_base::ContractError::NoAllowance {} => ContractError::NoAllowance {},

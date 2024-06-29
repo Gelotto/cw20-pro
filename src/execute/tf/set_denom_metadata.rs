@@ -1,22 +1,20 @@
 use crate::{
     error::ContractError,
-    msg::NewDenomMetadata,
-    state::storage::{FACTORY, FULL_DENOM, METADATA},
+    msg::tf::NewDenomMetadata,
+    state::tf::{TF_FACTORY, TF_FULL_DENOM, TF_METADATA},
 };
-use cosmwasm_std::{attr, Response};
+use cosmwasm_std::{attr, DepsMut, Env, Response};
 
-use super::Context;
-
-pub fn exec_set_denom_metadata(
-    ctx: Context,
+pub fn exec_tf_set_metadata(
+    deps: DepsMut,
+    env: Env,
     metadata: NewDenomMetadata,
 ) -> Result<Response, ContractError> {
-    let Context { deps, env, .. } = ctx;
-    let factory = FACTORY.load(deps.storage)?;
-    let full_denom = FULL_DENOM.load(deps.storage)?;
-    let denom_metadata = metadata.to_denom_metadata(factory.to_owned(), &full_denom);
+    let factory = TF_FACTORY.load(deps.storage)?;
+    let full_denom = TF_FULL_DENOM.load(deps.storage)?;
+    let denom_metadata = metadata.to_token_factory_metadata(factory.to_owned(), &full_denom);
 
-    METADATA.save(deps.storage, &metadata)?;
+    TF_METADATA.save(deps.storage, &metadata)?;
 
     Ok(Response::new()
         .add_attributes(vec![attr("action", "set_denom_metadata")])

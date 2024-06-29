@@ -6,7 +6,7 @@ use cw_storage_plus::Bound;
 use crate::{
     error::ContractError,
     msg::{AccountBalance, BalancesResponse},
-    state::storage::RANKED_BALANCES,
+    state::RANKED_BALANCES,
 };
 
 const DEFAULT_LIMIT: u16 = 50;

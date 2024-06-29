@@ -106,6 +106,15 @@ pub fn add_u64<A: Into<Uint64>, B: Into<Uint64>>(
     a.checked_add(b).map_err(|e| ContractError::Std(StdError::overflow(e)))
 }
 
+pub fn sub_u64<A: Into<Uint64>, B: Into<Uint64>>(
+    a: A,
+    b: B,
+) -> Result<Uint64, ContractError> {
+    let a: Uint64 = a.into();
+    let b: Uint64 = b.into();
+    a.checked_sub(b).map_err(|e| ContractError::Std(StdError::overflow(e)))
+}
+
 pub fn add_u32(
     a: u32,
     b: u32,
