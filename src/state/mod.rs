@@ -1,6 +1,6 @@
 pub mod tf;
 
-use cosmwasm_std::{ensure_eq, Addr, DepsMut, Env, MessageInfo, Response, StdError, Uint64};
+use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError, Uint64};
 use cw20::{EmbeddedLogo, Logo, LogoInfo, MarketingInfoResponse};
 use cw20_base::{
     contract::create_accounts,
@@ -21,7 +21,7 @@ pub const FROZEN_ACCOUNTS: Map<&Addr, bool> = Map::new("frozen_accounts");
 /// Top-level initialization of contract state
 pub fn init(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: cw20_base::msg::InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -149,19 +149,4 @@ fn verify_logo(logo: &Logo) -> Result<(), ContractError> {
         Logo::Embedded(EmbeddedLogo::Png(logo)) => verify_png_logo(logo),
         Logo::Url(_) => Ok(()), // Any reasonable url validation would be regex based, probably not worth it
     }
-}
-
-fn ensure_address(
-    addr: &Addr,
-    exp_addr: &Addr,
-    action: &str,
-) -> Result<(), ContractError> {
-    ensure_eq!(
-        *addr,
-        *exp_addr,
-        ContractError::Unauthorized {
-            reason: format!("only nois proxy may execute {}", action)
-        }
-    );
-    Ok(())
 }
