@@ -1,4 +1,4 @@
-use cosmwasm_std::{attr, DepsMut, Env, Response, SubMsg, Uint256, Uint64};
+use cosmwasm_std::{attr, DepsMut, Env, Event, Response, SubMsg, Uint256, Uint64};
 use cw20::{Logo, MarketingInfoResponse};
 use cw20_base::state::{TokenInfo, LOGO, MARKETING_INFO, TOKEN_INFO};
 
@@ -6,11 +6,14 @@ use crate::{
     contract::INITIAL_TF_MINT_REPLY_ID,
     error::ContractError,
     msg::tf::NewDenomMetadata,
-    state::tf::{TF_AMOUNT_BURNED, TF_AMOUNT_MINTED, TF_FACTORY, TF_FULL_DENOM, TF_METADATA, TF_REPLY_ID_COUNTER},
+    state::tf::{
+        TF_AMOUNT_BURNED, TF_AMOUNT_MINTED, TF_FACTORY, TF_FULL_DENOM, TF_METADATA, TF_N_BALANCES_INITIALIZED,
+        TF_REPLY_ID_COUNTER,
+    },
     tf::tokenfactory::TokenFactoryType,
 };
 
-pub fn exec_token_factory_init(
+pub fn exec_tf_derive_denom(
     deps: DepsMut,
     env: Env,
 ) -> Result<Response, ContractError> {
@@ -54,8 +57,10 @@ pub fn exec_token_factory_init(
     TF_AMOUNT_MINTED.save(deps.storage, &Uint256::zero())?;
     TF_AMOUNT_BURNED.save(deps.storage, &Uint256::zero())?;
     TF_METADATA.save(deps.storage, &metadata)?;
+    TF_N_BALANCES_INITIALIZED.save(deps.storage, &Uint64::zero())?;
 
     Ok(Response::new()
-        .add_attributes(vec![attr("action", "tf_init")])
+        .add_attributes(vec![attr("action", "tf_derive_denom")])
+        .add_event(Event::new("derive-denom").add_attribute("denom", full_denom))
         .add_submessages(denom_msgs))
 }

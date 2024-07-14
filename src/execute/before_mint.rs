@@ -1,9 +1,10 @@
 use crate::{
+    checks::ensure_accounts_not_frozen,
     error::ContractError,
     math::{add_u128, add_u64},
-    state::{N_BALANCES, RANKED_BALANCES},
+    state::{N_BALANCES, ORDERED_BALANCES},
 };
-use cosmwasm_std::{Api, Storage, Uint128};
+use cosmwasm_std::{Addr, Api, Storage, Uint128};
 use cw20_base::state::BALANCES;
 
 /// Custom business logic that executes BEFORE the cw20 base mint function
@@ -14,14 +15,24 @@ pub fn before_mint(
     delta: Uint128,
 ) -> Result<(), ContractError> {
     let recipient = api.addr_validate(&recipient)?;
-    let prev_balance = BALANCES.load(store, &recipient).unwrap_or_default();
+    ensure_accounts_not_frozen(store, None, Some(recipient.to_owned()))?;
+    update_ordered_balance(store, &recipient, delta)?;
+    Ok(())
+}
+
+/// Update the account's entry in the RANKED_BALANCES map and increment the
+/// aggregate balance counter if necessary.
+pub fn update_ordered_balance(
+    store: &mut dyn Storage,
+    address: &Addr,
+    delta: Uint128,
+) -> Result<(), ContractError> {
+    let prev_balance = BALANCES.load(store, &address).unwrap_or_default();
     let next_balance = add_u128(prev_balance, delta)?;
 
-    // Update the account's entry in the RANKED_BALANCES map and increment the
-    // aggregate balance counter if necessary.
-    RANKED_BALANCES.remove(store, (prev_balance.u128(), &recipient));
+    ORDERED_BALANCES.remove(store, (prev_balance.u128(), &address));
     if !next_balance.is_zero() {
-        RANKED_BALANCES.save(store, (next_balance.u128(), &recipient), &0)?;
+        ORDERED_BALANCES.save(store, (next_balance.u128(), &address), &0)?;
         if prev_balance.is_zero() {
             N_BALANCES.update(store, |n| add_u64(n, 1u64))?;
         }

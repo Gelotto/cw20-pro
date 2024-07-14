@@ -10,23 +10,41 @@ pub enum OperatorExecuteMsg {
     SetOperator { address: Addr },
     FreezeBalances { addresses: Option<Vec<Addr>> },
     UnfreezeBalances { addresses: Option<Vec<Addr>> },
-    TokenFactoryInit {},
-    TokenFactoryAirdrop { limit: Option<u16> },
+    CopyBalances { cw20_address: Addr, mode: BalanceCopyMode },
 }
 
 #[cw_serde]
 pub enum TokenFactoryExecuteMsg {
-    Mint { recipients: Vec<(Addr, Uint128)> },
-    Burn { amount: Uint128 },
-    SetMetadata { metadata: tf::NewDenomMetadata },
-    SetAdmin { address: Addr },
+    /// Copy the current CW20's balances to the tokenfactory denom. This may
+    /// require multiple transactions, depending on the number of accounts. A
+    /// true/false "done" attribute is returned in tx events.
+    DeriveBalances {
+        limit: Option<u16>,
+    },
+    /// Create a new tokenfactory token AKA bank denom, initialized to the same
+    /// parameters used by the CW20 -- name, decimals, etc.
+    DeriveDenom {},
+    /// Mint and send tokens to a list of recipients. Expects a vec of
+    /// (recipient, amount) pairs.
+    Mint {
+        recipients: Vec<(Addr, Uint128)>,
+    },
+    Burn {
+        amount: Uint128,
+    },
+    SetMetadata {
+        metadata: tf::NewDenomMetadata,
+    },
+    SetAdmin {
+        address: Addr,
+    },
     RemoveAdmin {},
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
     /// Tokenfactory-related functions
-    Operator(OperatorExecuteMsg),
+    Pro(OperatorExecuteMsg),
     /// Tokenfactory-related functions
     TokenFactory(TokenFactoryExecuteMsg),
 
@@ -96,11 +114,26 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
-pub enum ProQueryMsg {
-    Balances {
+pub enum ProBalanceQueryMsg {
+    All {
         limit: Option<u16>,
+        desc: Option<bool>,
         cursor: Option<(Uint128, Addr)>,
     },
+    ByAddress {
+        addresses: Vec<Addr>,
+    },
+}
+
+#[cw_serde]
+pub enum BalanceCopyMode {
+    Replace,
+    Increment,
+}
+
+#[cw_serde]
+pub enum ProQueryMsg {
+    Balances(ProBalanceQueryMsg),
 }
 
 #[cw_serde]
@@ -119,6 +152,40 @@ pub enum QueryMsg {
     Allowance {
         owner: String,
         spender: String,
+    },
+    /// Only with "enumerable" extension
+    /// Returns all accounts that have balances. Supports pagination.
+    /// Return type: AllAccountsResponse.
+    AllAccounts {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    /// Only with "mintable" extension.
+    /// Returns who can mint and the hard cap on maximum tokens after minting.
+    /// Return type: MinterResponse.
+    Minter {},
+    /// Only with "marketing" extension
+    /// Returns more metadata on the contract to display in the client:
+    /// - description, logo, project url, etc.
+    /// Return type: MarketingInfoResponse.
+    MarketingInfo {},
+    /// Only with "marketing" extension
+    /// Downloads the embedded logo data (if stored on chain). Errors if no logo data stored for
+    /// this contract.
+    /// Return type: DownloadLogoResponse.
+    DownloadLogo {},
+    /// Only with "enumerable" extension (and "allowances")
+    /// Returns all allowances this owner has approved. Supports pagination.
+    /// Return type: AllAllowancesResponse.
+    AllAllowances {
+        owner: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+    AllSpenderAllowances {
+        owner: String,
+        start_after: Option<String>,
+        limit: Option<u32>,
     },
 }
 

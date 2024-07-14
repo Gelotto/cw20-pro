@@ -5,6 +5,8 @@ use crate::{
 use cosmwasm_std::{CosmosMsg, Env, Storage};
 
 /// Custom business logic that executes before the cw20-base's update_marketing.
+/// Note that the tx sender MUST be the address stored in the cw20's
+/// MARKETING_INFO in the "marketing" field.
 pub fn before_update_marketing(
     store: &mut dyn Storage,
     env: &Env,

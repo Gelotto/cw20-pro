@@ -4,8 +4,7 @@ use crate::{
     state::tf::{TF_AMOUNT_MINTED, TF_FACTORY, TF_FULL_DENOM, TF_REPLY_ID_COUNTER},
 };
 use cosmwasm_std::{
-    attr, Addr, BankMsg, Coin, DepsMut, Env, Event, Reply, Response, StdError, Storage, SubMsg, SubMsgResult, Uint128,
-    Uint64,
+    attr, Addr, BankMsg, Coin, DepsMut, Env, Reply, Response, StdError, Storage, SubMsg, SubMsgResult, Uint128, Uint64,
 };
 use cw_storage_plus::Deque;
 
@@ -29,7 +28,6 @@ pub fn send_minted_balances(
     reply: Reply,
 ) -> Result<Response, ContractError> {
     let mut send_msgs: Vec<SubMsg> = Vec::with_capacity(4);
-    let mut events: Vec<Event> = Vec::with_capacity(4);
     match reply.result {
         SubMsgResult::Err(e) => return Err(ContractError::Std(StdError::generic_err(e.to_string()))),
         SubMsgResult::Ok(_) => {
@@ -39,12 +37,6 @@ pub fn send_minted_balances(
             for _ in 0..queue.len(deps.storage)? {
                 if let Some((recipient, amount)) = queue.pop_front(deps.storage)? {
                     let denom = TF_FULL_DENOM.load(deps.storage)?;
-
-                    events.push(Event::new("mint").add_attributes(vec![
-                        attr("amount", amount.u128().to_string()),
-                        attr("recipient", recipient.to_string()),
-                    ]));
-
                     send_msgs.push(SubMsg::new(BankMsg::Send {
                         to_address: recipient.to_string(),
                         amount: vec![Coin::new(amount.into(), denom.to_owned())],

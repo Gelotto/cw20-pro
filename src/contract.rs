@@ -4,18 +4,21 @@ use crate::execute::before_mint::before_mint;
 use crate::execute::before_transfer::before_transfer;
 use crate::execute::before_update_marketing::before_update_marketing;
 use crate::execute::before_upload_logo::before_upload_logo;
-use crate::execute::operator::airdrop_token_factory::exec_token_factory_airdrop;
+use crate::execute::operator::copy_cw20_balances::exec_copy_cw20_balances;
 use crate::execute::operator::freeze::{exec_freeze, exec_unfreeze};
-use crate::execute::operator::init_token_factory::exec_token_factory_init;
 use crate::execute::operator::remove_operator::exec_remove_operator;
 use crate::execute::operator::set_operator::exec_set_operator;
 use crate::execute::tf::burn::exec_tf_burn;
+use crate::execute::tf::derive_balances::exec_tf_derive_balances;
+use crate::execute::tf::derive_denom::exec_tf_derive_denom;
 use crate::execute::tf::mint::{exec_tf_mint, send_minted_balances};
 use crate::execute::tf::remove_denom_admin::exec_tf_remove_admin;
 use crate::execute::tf::set_denom_admin::exec_tf_set_admin;
 use crate::execute::tf::set_denom_metadata::exec_tf_set_metadata;
-use crate::msg::{ExecuteMsg, MigrateMsg, OperatorExecuteMsg, ProQueryMsg, QueryMsg, TokenFactoryExecuteMsg};
-use crate::query::query_balances;
+use crate::msg::{
+    ExecuteMsg, MigrateMsg, OperatorExecuteMsg, ProBalanceQueryMsg, ProQueryMsg, QueryMsg, TokenFactoryExecuteMsg,
+};
+use crate::query::balances::{query_balances_by_address, query_paginate_balances};
 use crate::state;
 use cosmwasm_std::{entry_point, to_json_binary, Reply};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
@@ -26,8 +29,9 @@ use cw20_base::allowances::{
 };
 use cw20_base::contract::{
     execute_burn, execute_mint, execute_send, execute_transfer, execute_update_marketing, execute_update_minter,
-    execute_upload_logo, query_balance, query_token_info,
+    execute_upload_logo, query_balance, query_download_logo, query_marketing_info, query_minter, query_token_info,
 };
+use cw20_base::enumerable::{query_all_accounts, query_owner_allowances, query_spender_allowances};
 
 const CONTRACT_NAME: &str = "crates.io:cw20-pro";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -53,23 +57,27 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        // Route Operator-executed msgs
-        ExecuteMsg::Operator(msg) => match msg {
+        // Admin msgs
+        ExecuteMsg::Pro(msg) => match msg {
             OperatorExecuteMsg::RemoveOperator {} => exec_remove_operator(deps),
             OperatorExecuteMsg::SetOperator { address } => exec_set_operator(deps, address),
             OperatorExecuteMsg::FreezeBalances { addresses } => exec_freeze(deps, addresses),
             OperatorExecuteMsg::UnfreezeBalances { addresses } => exec_unfreeze(deps, addresses),
-            OperatorExecuteMsg::TokenFactoryInit {} => exec_token_factory_init(deps, env),
-            OperatorExecuteMsg::TokenFactoryAirdrop { limit } => exec_token_factory_airdrop(deps, env, limit),
+            OperatorExecuteMsg::CopyBalances { cw20_address, mode } => {
+                exec_copy_cw20_balances(deps, cw20_address, mode)
+            },
+            // TODO: add burner whitelist. if not exist, burning is public
         },
 
-        // Route tokenfactory-related msgs
+        // TokenFactory msgs
         ExecuteMsg::TokenFactory(msg) => match msg {
             TokenFactoryExecuteMsg::Mint { recipients } => exec_tf_mint(deps, env, recipients),
             TokenFactoryExecuteMsg::Burn { amount } => exec_tf_burn(deps, env, amount),
             TokenFactoryExecuteMsg::SetMetadata { metadata } => exec_tf_set_metadata(deps, env, metadata),
             TokenFactoryExecuteMsg::SetAdmin { address } => exec_tf_set_admin(deps, env, address),
             TokenFactoryExecuteMsg::RemoveAdmin {} => exec_tf_remove_admin(deps, env),
+            TokenFactoryExecuteMsg::DeriveDenom {} => exec_tf_derive_denom(deps, env),
+            TokenFactoryExecuteMsg::DeriveBalances { limit } => exec_tf_derive_balances(deps, env, limit),
         },
 
         // Inherited CW20-base functions
@@ -181,14 +189,37 @@ pub fn query(
     msg: QueryMsg,
 ) -> Result<Binary, ContractError> {
     let result = match msg {
+        // Pro tools queries
         QueryMsg::Pro(msg) => match msg {
-            ProQueryMsg::Balances { limit, cursor } => to_json_binary(&query_balances(deps, limit, cursor)?),
+            // Balance-related queries
+            ProQueryMsg::Balances(msg) => match msg {
+                ProBalanceQueryMsg::All { limit, desc, cursor } => {
+                    to_json_binary(&query_paginate_balances(deps, limit, desc, cursor)?)
+                },
+                ProBalanceQueryMsg::ByAddress { addresses } => {
+                    to_json_binary(&query_balances_by_address(deps, addresses)?)
+                },
+            },
         },
 
         // inherited from cw20-base
         QueryMsg::TokenInfo {} => to_json_binary(&query_token_info(deps)?),
         QueryMsg::Balance { address } => to_json_binary(&query_balance(deps, address)?),
+        QueryMsg::Minter {} => to_json_binary(&query_minter(deps)?),
+        QueryMsg::MarketingInfo {} => to_json_binary(&query_marketing_info(deps)?),
+        QueryMsg::DownloadLogo {} => to_json_binary(&query_download_logo(deps)?),
         QueryMsg::Allowance { owner, spender } => to_json_binary(&query_allowance(deps, owner, spender)?),
+        QueryMsg::AllAccounts { limit, start_after } => to_json_binary(&query_all_accounts(deps, start_after, limit)?),
+        QueryMsg::AllAllowances {
+            owner,
+            limit,
+            start_after,
+        } => to_json_binary(&query_owner_allowances(deps, owner, start_after, limit)?),
+        QueryMsg::AllSpenderAllowances {
+            owner,
+            limit,
+            start_after,
+        } => to_json_binary(&query_spender_allowances(deps, owner, start_after, limit)?),
     }?;
     Ok(result)
 }

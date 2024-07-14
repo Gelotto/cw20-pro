@@ -4,7 +4,8 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use cosmwasm_std::Coin;
 
-use cw20_nft_raffle::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cw20_base::msg::InstantiateMsg;
+use cw20_pro::msg::{ExecuteMsg, QueryMsg};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

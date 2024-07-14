@@ -1,6 +1,8 @@
 pub mod tf;
 
-use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError, Uint64};
+use std::collections::HashMap;
+
+use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError, Uint128, Uint64};
 use cw20::{EmbeddedLogo, Logo, LogoInfo, MarketingInfoResponse};
 use cw20_base::{
     contract::create_accounts,
@@ -8,15 +10,16 @@ use cw20_base::{
 };
 use cw_storage_plus::{Item, Map};
 
-use crate::error::ContractError;
+use crate::{error::ContractError, math::add_u128};
 
 const LOGO_SIZE_CAP: usize = 5 * 1024;
 
 pub const OPERATOR_ADDR: Item<Addr> = Item::new("operator_addr");
-pub const RANKED_BALANCES: Map<(u128, &Addr), u8> = Map::new("ranked_balances");
+pub const ORDERED_BALANCES: Map<(u128, &Addr), u8> = Map::new("ordered_balances");
 pub const N_BALANCES: Item<Uint64> = Item::new("n_balances");
 pub const GLOBAL_BALANCE_FREEZE: Item<bool> = Item::new("global_balance_freeze");
 pub const FROZEN_ACCOUNTS: Map<&Addr, bool> = Map::new("frozen_accounts");
+pub const BALANCE_COPY_CURSORS: Map<&Addr, String> = Map::new("balance_copy_cursors");
 
 /// Top-level initialization of contract state
 pub fn init(
@@ -27,7 +30,27 @@ pub fn init(
 ) -> Result<Response, ContractError> {
     OPERATOR_ADDR.save(deps.storage, &info.sender)?;
     GLOBAL_BALANCE_FREEZE.save(deps.storage, &false)?;
-    N_BALANCES.save(deps.storage, &Uint64::zero())?;
+
+    if !msg.initial_balances.is_empty() {
+        let mut initial_balances_hmap: HashMap<String, Uint128> = HashMap::with_capacity(msg.initial_balances.len());
+        for b in msg.initial_balances.iter() {
+            initial_balances_hmap.insert(
+                b.address.to_owned(),
+                add_u128(
+                    *initial_balances_hmap.get(&b.address).unwrap_or(&Uint128::zero()),
+                    b.amount,
+                )?,
+            );
+        }
+        for (address, amount) in initial_balances_hmap.iter() {
+            // Use unchecked because the cw20 base create_accounts already
+            // validates the addrs.
+            let address = Addr::unchecked(address);
+            ORDERED_BALANCES.save(deps.storage, (amount.u128(), &address), &0)?;
+        }
+    }
+
+    N_BALANCES.save(deps.storage, &(msg.initial_balances.len() as u64).into())?;
 
     // CW20-base instantiation
     //--------------------------------------

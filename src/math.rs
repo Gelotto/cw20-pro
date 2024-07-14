@@ -119,7 +119,7 @@ pub fn add_u32(
     a: u32,
     b: u32,
 ) -> Result<u32, ContractError> {
-    a.checked_add(1).ok_or_else(|| {
+    a.checked_add(b).ok_or_else(|| {
         ContractError::Std(StdError::Overflow {
             source: OverflowError::new(OverflowOperation::Add, a, b),
         })
@@ -130,7 +130,7 @@ pub fn sub_u32(
     a: u32,
     b: u32,
 ) -> Result<u32, ContractError> {
-    a.checked_sub(1).ok_or_else(|| {
+    a.checked_sub(b).ok_or_else(|| {
         ContractError::Std(StdError::Overflow {
             source: OverflowError::new(OverflowOperation::Sub, a, b),
         })

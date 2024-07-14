@@ -1,3 +1,1 @@
-mod balances;
-
-pub use balances::query_balances;
+pub mod balances;
