@@ -1,5 +1,8 @@
-use crate::{error::ContractError, state::FROZEN_ACCOUNTS};
-use cosmwasm_std::{ensure_ne, Addr, Storage};
+use crate::{
+    error::ContractError,
+    state::{FROZEN_ACCOUNTS, OPERATOR_ADDR},
+};
+use cosmwasm_std::{ensure_eq, ensure_ne, Addr, Storage};
 
 use crate::state::GLOBAL_BALANCE_FREEZE;
 
@@ -51,5 +54,19 @@ pub fn ensure_accounts_not_frozen(
         }
     }
 
+    Ok(())
+}
+
+pub fn ensure_operator(
+    store: &dyn Storage,
+    addr: &Addr,
+) -> Result<(), ContractError> {
+    ensure_eq!(
+        OPERATOR_ADDR.load(store)?,
+        *addr,
+        ContractError::Unauthorized {
+            reason: "Operator authorization required".to_owned()
+        }
+    );
     Ok(())
 }

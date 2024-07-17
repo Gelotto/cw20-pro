@@ -142,6 +142,7 @@ impl TokenFactoryType {
                     denom: denom.to_string(),
                     amount: amount.to_string(),
                 }),
+                mint_to_address: sender.to_string(),
             }),
             TokenFactoryType::Juno => <juno::denom::MsgMint as Into<CosmosMsg>>::into(juno::denom::MsgMint {
                 sender: sender.to_string(),

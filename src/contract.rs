@@ -1,3 +1,4 @@
+use crate::checks::ensure_operator;
 use crate::error::ContractError;
 use crate::execute::before_burn::before_burn;
 use crate::execute::before_mint::before_mint;
@@ -11,7 +12,7 @@ use crate::execute::operator::set_operator::exec_set_operator;
 use crate::execute::tf::burn::exec_tf_burn;
 use crate::execute::tf::derive_balances::exec_tf_derive_balances;
 use crate::execute::tf::derive_denom::exec_tf_derive_denom;
-use crate::execute::tf::mint::{exec_tf_mint, send_minted_balances};
+use crate::execute::tf::mint::exec_tf_mint;
 use crate::execute::tf::remove_denom_admin::exec_tf_remove_admin;
 use crate::execute::tf::set_denom_admin::exec_tf_set_admin;
 use crate::execute::tf::set_denom_metadata::exec_tf_set_metadata;
@@ -20,7 +21,7 @@ use crate::msg::{
 };
 use crate::query::balances::{query_balances_by_address, query_paginate_balances};
 use crate::state;
-use cosmwasm_std::{entry_point, to_json_binary, Reply};
+use cosmwasm_std::{entry_point, to_json_binary};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 use cw2::set_contract_version;
 use cw20_base::allowances::{
@@ -58,26 +59,32 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         // Admin msgs
-        ExecuteMsg::Pro(msg) => match msg {
-            OperatorExecuteMsg::RemoveOperator {} => exec_remove_operator(deps),
-            OperatorExecuteMsg::SetOperator { address } => exec_set_operator(deps, address),
-            OperatorExecuteMsg::FreezeBalances { addresses } => exec_freeze(deps, addresses),
-            OperatorExecuteMsg::UnfreezeBalances { addresses } => exec_unfreeze(deps, addresses),
-            OperatorExecuteMsg::CopyBalances { cw20_address, mode } => {
-                exec_copy_cw20_balances(deps, cw20_address, mode)
-            },
-            // TODO: add burner whitelist. if not exist, burning is public
+        ExecuteMsg::Pro(msg) => {
+            ensure_operator(deps.storage, &info.sender)?;
+            match msg {
+                OperatorExecuteMsg::RemoveOperator {} => exec_remove_operator(deps),
+                OperatorExecuteMsg::SetOperator { address } => exec_set_operator(deps, address),
+                OperatorExecuteMsg::FreezeBalances { addresses } => exec_freeze(deps, addresses),
+                OperatorExecuteMsg::UnfreezeBalances { addresses } => exec_unfreeze(deps, addresses),
+                OperatorExecuteMsg::CopyBalances { cw20_address, mode } => {
+                    exec_copy_cw20_balances(deps, cw20_address, mode)
+                },
+                // TODO: add burner whitelist. if not exist, burning is public
+            }
         },
 
         // TokenFactory msgs
-        ExecuteMsg::TokenFactory(msg) => match msg {
-            TokenFactoryExecuteMsg::Mint { recipients } => exec_tf_mint(deps, env, recipients),
-            TokenFactoryExecuteMsg::Burn { amount } => exec_tf_burn(deps, env, amount),
-            TokenFactoryExecuteMsg::SetMetadata { metadata } => exec_tf_set_metadata(deps, env, metadata),
-            TokenFactoryExecuteMsg::SetAdmin { address } => exec_tf_set_admin(deps, env, address),
-            TokenFactoryExecuteMsg::RemoveAdmin {} => exec_tf_remove_admin(deps, env),
-            TokenFactoryExecuteMsg::DeriveDenom {} => exec_tf_derive_denom(deps, env),
-            TokenFactoryExecuteMsg::DeriveBalances { limit } => exec_tf_derive_balances(deps, env, limit),
+        ExecuteMsg::TokenFactory(msg) => {
+            ensure_operator(deps.storage, &info.sender)?;
+            match msg {
+                TokenFactoryExecuteMsg::Mint { recipients } => exec_tf_mint(deps, env, recipients),
+                TokenFactoryExecuteMsg::Burn { amount } => exec_tf_burn(deps, env, amount),
+                TokenFactoryExecuteMsg::SetMetadata { metadata } => exec_tf_set_metadata(deps, env, metadata),
+                TokenFactoryExecuteMsg::SetAdmin { address } => exec_tf_set_admin(deps, env, address),
+                TokenFactoryExecuteMsg::RemoveAdmin {} => exec_tf_remove_admin(deps, env),
+                TokenFactoryExecuteMsg::DeriveDenom {} => exec_tf_derive_denom(deps, env),
+                TokenFactoryExecuteMsg::DeriveBalances { limit } => exec_tf_derive_balances(deps, env, limit),
+            }
         },
 
         // Inherited CW20-base functions
@@ -167,20 +174,14 @@ pub fn execute(
     }
 }
 
-#[entry_point]
-pub fn reply(
-    deps: DepsMut,
-    _env: Env,
-    reply: Reply,
-) -> Result<Response, ContractError> {
-    if reply.id >= INITIAL_TF_MINT_REPLY_ID {
-        send_minted_balances(deps, reply)
-    } else {
-        Err(ContractError::Unauthorized {
-            reason: format!("unrecognized reply id {}", reply.id),
-        })
-    }
-}
+// #[entry_point]
+// pub fn reply(
+//     deps: DepsMut,
+//     _env: Env,
+//     reply: Reply,
+// ) -> Result<Response, ContractError> {
+//     Ok(Response::new())
+// }
 
 #[entry_point]
 pub fn query(

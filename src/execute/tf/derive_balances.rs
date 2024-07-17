@@ -32,15 +32,21 @@ pub fn exec_tf_derive_balances(
         .and_then(|_| Ok(Some(Bound::Exclusive((&cursor_addr, PhantomData)))))
         .unwrap_or(None);
 
+    let limit = limit
+        .and_then(|x| Some(x as usize))
+        .unwrap_or(DEFAULT_BALANCE_BATCH_SIZE)
+        .clamp(1, MAX_BALANCE_BATCH_SIZE) as usize;
+
     // Build next batch of recipient addrs & amnounts (initial balances)
     let mut recipients: Vec<(Addr, Uint128)> = Vec::with_capacity(N_BALANCES.load(deps.storage)?.u64() as usize);
-    for result in BALANCES.range(deps.storage, min_bound, None, Order::Ascending).take(
-        limit
-            .and_then(|x| Some(x as usize))
-            .unwrap_or(DEFAULT_BALANCE_BATCH_SIZE)
-            .clamp(1, MAX_BALANCE_BATCH_SIZE) as usize,
-    ) {
-        recipients.push(result?);
+    for result in BALANCES.range(deps.storage, min_bound, None, Order::Ascending) {
+        let (addr, balance) = result?;
+        if !balance.is_zero() {
+            recipients.push((addr, balance));
+        }
+        if recipients.len() == limit {
+            break;
+        }
     }
 
     let n_accounts_minted = TF_N_BALANCES_INITIALIZED.update(deps.storage, |n| -> Result<_, ContractError> {
@@ -58,8 +64,8 @@ pub fn exec_tf_derive_balances(
     // Mint coins to airdrop recipients via submsgs
     Ok(if !recipients.is_empty() {
         TF_INITIAL_BALANCES_CURSOR.save(deps.storage, &recipients.last().unwrap().0)?;
-        let (mint_amount, transfer_submsg) = mint_multiple(deps.storage, &env.contract.address, &recipients)?;
-        resp.add_submessage(transfer_submsg)
+        let (mint_amount, submsgs) = mint_multiple(deps.storage, &env.contract.address, &recipients)?;
+        resp.add_submessages(submsgs)
             .add_event(Event::new("airdrop").add_attributes(vec![
                 attr("mint_amount", mint_amount.u128().to_string()),
                 attr("done", (n_accounts == n_accounts_minted.u64()).to_string()),

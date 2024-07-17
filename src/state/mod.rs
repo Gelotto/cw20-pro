@@ -3,12 +3,13 @@ pub mod tf;
 use std::collections::HashMap;
 
 use cosmwasm_std::{Addr, DepsMut, Env, MessageInfo, Response, StdError, Uint128, Uint64};
-use cw20::{EmbeddedLogo, Logo, LogoInfo, MarketingInfoResponse};
+use cw20::{Cw20Coin, EmbeddedLogo, Logo, LogoInfo, MarketingInfoResponse};
 use cw20_base::{
     contract::create_accounts,
     state::{MinterData, TokenInfo, LOGO, MARKETING_INFO, TOKEN_INFO},
 };
 use cw_storage_plus::{Item, Map};
+use tf::TF_N_BALANCES_INITIALIZED;
 
 use crate::{error::ContractError, math::add_u128};
 
@@ -30,7 +31,9 @@ pub fn init(
 ) -> Result<Response, ContractError> {
     OPERATOR_ADDR.save(deps.storage, &info.sender)?;
     GLOBAL_BALANCE_FREEZE.save(deps.storage, &false)?;
+    TF_N_BALANCES_INITIALIZED.save(deps.storage, &Uint64::zero())?;
 
+    let mut non_zero_initial_balances: Vec<Cw20Coin> = Vec::with_capacity(msg.initial_balances.len());
     if !msg.initial_balances.is_empty() {
         let mut initial_balances_hmap: HashMap<String, Uint128> = HashMap::with_capacity(msg.initial_balances.len());
         for b in msg.initial_balances.iter() {
@@ -45,12 +48,18 @@ pub fn init(
         for (address, amount) in initial_balances_hmap.iter() {
             // Use unchecked because the cw20 base create_accounts already
             // validates the addrs.
-            let address = Addr::unchecked(address);
-            ORDERED_BALANCES.save(deps.storage, (amount.u128(), &address), &0)?;
+            if !amount.is_zero() {
+                let address = Addr::unchecked(address);
+                ORDERED_BALANCES.save(deps.storage, (amount.u128(), &address), &0)?;
+                non_zero_initial_balances.push(Cw20Coin {
+                    address: address.to_string(),
+                    amount: *amount,
+                });
+            }
         }
     }
 
-    N_BALANCES.save(deps.storage, &(msg.initial_balances.len() as u64).into())?;
+    N_BALANCES.save(deps.storage, &Uint64::from(non_zero_initial_balances.len() as u64))?;
 
     // CW20-base instantiation
     //--------------------------------------
@@ -59,7 +68,7 @@ pub fn init(
 
     // create initial accounts
     let mut deps = deps;
-    let total_supply = create_accounts(&mut deps, &msg.initial_balances)?;
+    let total_supply = create_accounts(&mut deps, &non_zero_initial_balances)?;
 
     if let Some(limit) = msg.get_cap() {
         if total_supply > limit {
