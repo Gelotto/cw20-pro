@@ -21,6 +21,7 @@ pub const N_BALANCES: Item<Uint64> = Item::new("n_balances");
 pub const GLOBAL_BALANCE_FREEZE: Item<bool> = Item::new("global_balance_freeze");
 pub const FROZEN_ACCOUNTS: Map<&Addr, bool> = Map::new("frozen_accounts");
 pub const BALANCE_COPY_CURSORS: Map<&Addr, String> = Map::new("balance_copy_cursors");
+pub const BALANCE_CHANGE_LISTENERS: Item<Vec<Addr>> = Item::new("balance_change_listeners");
 
 /// Top-level initialization of contract state
 pub fn init(

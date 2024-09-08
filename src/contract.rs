@@ -9,6 +9,7 @@ use crate::execute::operator::copy_cw20_balances::exec_copy_cw20_balances;
 use crate::execute::operator::freeze::{exec_freeze, exec_unfreeze};
 use crate::execute::operator::remove_operator::exec_remove_operator;
 use crate::execute::operator::set_operator::exec_set_operator;
+use crate::execute::operator::update_balance_change_listeners::exec_update_balance_change_listeners;
 use crate::execute::tf::burn::exec_tf_burn;
 use crate::execute::tf::derive_balances::exec_tf_derive_balances;
 use crate::execute::tf::derive_denom::exec_tf_derive_denom;
@@ -64,6 +65,9 @@ pub fn execute(
             match msg {
                 OperatorExecuteMsg::RemoveOperator {} => exec_remove_operator(deps),
                 OperatorExecuteMsg::SetOperator { address } => exec_set_operator(deps, address),
+                OperatorExecuteMsg::UpdateBalanceChangeListeners { add, remove } => {
+                    exec_update_balance_change_listeners(deps, add, remove)
+                },
                 OperatorExecuteMsg::FreezeBalances { addresses } => exec_freeze(deps, addresses),
                 OperatorExecuteMsg::UnfreezeBalances { addresses } => exec_unfreeze(deps, addresses),
                 OperatorExecuteMsg::CopyBalances { cw20_address, mode } => {
@@ -89,26 +93,26 @@ pub fn execute(
 
         // Inherited CW20-base functions
         ExecuteMsg::Transfer { recipient, amount } => {
-            before_transfer(deps.storage, deps.api, &info.sender, &recipient, amount)?;
-            Ok(execute_transfer(deps, env, info, recipient, amount)?)
+            let submsgs = before_transfer(deps.storage, deps.api, &info.sender, &recipient, amount)?;
+            Ok(execute_transfer(deps, env, info, recipient, amount)?.add_submessages(submsgs))
         },
         ExecuteMsg::Send { contract, amount, msg } => {
-            before_transfer(deps.storage, deps.api, &info.sender, &contract, amount)?;
-            Ok(execute_send(deps, env, info, contract, amount, msg)?)
+            let submsgs = before_transfer(deps.storage, deps.api, &info.sender, &contract, amount)?;
+            Ok(execute_send(deps, env, info, contract, amount, msg)?.add_submessages(submsgs))
         },
         ExecuteMsg::TransferFrom {
             owner,
             recipient,
             amount,
         } => {
-            before_transfer(
+            let submsgs = before_transfer(
                 deps.storage,
                 deps.api,
                 &deps.api.addr_validate(&owner)?,
                 &recipient,
                 amount,
             )?;
-            Ok(execute_transfer_from(deps, env, info, owner, recipient, amount)?)
+            Ok(execute_transfer_from(deps, env, info, owner, recipient, amount)?.add_submessages(submsgs))
         },
         ExecuteMsg::SendFrom {
             owner,
@@ -116,28 +120,28 @@ pub fn execute(
             amount,
             msg,
         } => {
-            before_transfer(
+            let submsgs = before_transfer(
                 deps.storage,
                 deps.api,
                 &deps.api.addr_validate(&owner)?,
                 &contract,
                 amount,
             )?;
-            Ok(execute_send_from(deps, env, info, owner, contract, amount, msg)?)
+            Ok(execute_send_from(deps, env, info, owner, contract, amount, msg)?.add_submessages(submsgs))
         },
         ExecuteMsg::Mint { amount, recipient } => {
-            before_mint(deps.storage, deps.api, &recipient, amount)?;
-            Ok(execute_mint(deps, env, info, recipient, amount)?)
+            let submsgs = before_mint(deps.storage, deps.api, &info.sender, &recipient, amount)?;
+            Ok(execute_mint(deps, env, info, recipient, amount)?.add_submessages(submsgs))
         },
         ExecuteMsg::UpdateMinter { new_minter } => Ok(execute_update_minter(deps, env, info, new_minter)?),
         ExecuteMsg::Burn { amount } => {
             let sender = info.sender.to_string();
-            before_burn(deps.storage, deps.api, &sender, amount)?;
-            Ok(execute_burn(deps, env, info, amount)?)
+            let submsgs = before_burn(deps.storage, deps.api, &sender, amount)?;
+            Ok(execute_burn(deps, env, info, amount)?.add_submessages(submsgs))
         },
         ExecuteMsg::BurnFrom { owner, amount } => {
-            before_burn(deps.storage, deps.api, &owner, amount)?;
-            Ok(execute_burn_from(deps, env, info, owner, amount)?)
+            let submsgs = before_burn(deps.storage, deps.api, &owner, amount)?;
+            Ok(execute_burn_from(deps, env, info, owner, amount)?.add_submessages(submsgs))
         },
         ExecuteMsg::IncreaseAllowance {
             spender,

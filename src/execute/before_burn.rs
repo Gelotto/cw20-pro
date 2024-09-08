@@ -2,10 +2,13 @@ use crate::{
     checks::ensure_accounts_not_frozen,
     error::ContractError,
     math::{sub_u128, sub_u64},
+    msg::BalanceChangeEvent,
     state::{N_BALANCES, ORDERED_BALANCES},
 };
-use cosmwasm_std::{Addr, Api, Storage, Uint128};
+use cosmwasm_std::{Addr, Api, Storage, SubMsg, Uint128};
 use cw20_base::state::BALANCES;
+
+use super::before_transfer::notify_balance_change_listeners;
 
 /// Custom business logic that executes BEFORE the cw20 base burn function
 pub fn before_burn(
@@ -13,11 +16,21 @@ pub fn before_burn(
     api: &dyn Api,
     burner: &String,
     delta: Uint128,
-) -> Result<(), ContractError> {
+) -> Result<Vec<SubMsg>, ContractError> {
     let burner = api.addr_validate(&burner)?;
+
     ensure_accounts_not_frozen(store, Some(burner.to_owned()), None)?;
     update_ordered_balance(store, &burner, delta)?;
-    Ok(())
+
+    let submsgs = notify_balance_change_listeners(
+        store,
+        &BalanceChangeEvent::Burn {
+            initiator: burner.to_owned(),
+            amount: delta,
+        },
+    )?;
+
+    Ok(submsgs)
 }
 
 /// Update the account's entry in the RANKED_BALANCES map and decrement the

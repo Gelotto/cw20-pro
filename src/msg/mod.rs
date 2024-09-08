@@ -7,10 +7,23 @@ use cw20::{Expiration, Logo};
 #[cw_serde]
 pub enum OperatorExecuteMsg {
     RemoveOperator {},
-    SetOperator { address: Addr },
-    FreezeBalances { addresses: Option<Vec<Addr>> },
-    UnfreezeBalances { addresses: Option<Vec<Addr>> },
-    CopyBalances { cw20_address: Addr, mode: BalanceCopyMode },
+    SetOperator {
+        address: Addr,
+    },
+    FreezeBalances {
+        addresses: Option<Vec<Addr>>,
+    },
+    UnfreezeBalances {
+        addresses: Option<Vec<Addr>>,
+    },
+    CopyBalances {
+        cw20_address: Addr,
+        mode: BalanceCopyMode,
+    },
+    UpdateBalanceChangeListeners {
+        add: Option<Vec<Addr>>,
+        remove: Option<Vec<Addr>>,
+    },
 }
 
 #[cw_serde]
@@ -202,4 +215,27 @@ pub struct AccountBalance {
 pub struct BalancesResponse {
     pub balances: Vec<AccountBalance>,
     pub cursor: Option<(Uint128, Addr)>,
+}
+
+#[cw_serde]
+pub enum BalanceChangeEvent {
+    Transfer {
+        initiator: Addr,
+        recipient: Addr,
+        amount: Uint128,
+    },
+    Burn {
+        initiator: Addr,
+        amount: Uint128,
+    },
+    Mint {
+        initiator: Addr,
+        recipient: Addr,
+        amount: Uint128,
+    },
+}
+
+#[cw_serde]
+pub enum BalanceChangeListenerInterface {
+    OnBalanceChange { event: BalanceChangeEvent },
 }
