@@ -21,13 +21,16 @@ pub fn before_transfer(
 
     ensure_not_self_transfer(sender, &recipient)?;
     ensure_accounts_not_frozen(store, Some(sender.to_owned()), Some(recipient.to_owned()))?;
-    update_ordered_balances(store, sender, &recipient, delta)?;
+
+    let (initiator_balance, recipient_balance) = update_ordered_balances(store, sender, &recipient, delta)?;
 
     let submsgs = notify_balance_change_listeners(
         store,
         &BalanceChangeEvent::Transfer {
             initiator: sender.to_owned(),
+            initiator_balance,
             recipient: recipient.to_owned(),
+            recipient_balance,
             amount: delta,
         },
     )?;
@@ -35,15 +38,16 @@ pub fn before_transfer(
     Ok(submsgs)
 }
 
-/// Update index for paginating accounts by balance amounts.
+/// Update index for paginating accounts by balance amounts. Return new balances
+/// for sender and recipient.
 pub fn update_ordered_balances(
     store: &mut dyn Storage,
     sender: &Addr,
     recipient: &Addr,
     delta: Uint128,
-) -> Result<(), ContractError> {
+) -> Result<(Uint128, Uint128), ContractError> {
     // Adjust senders's entry in ordered balances map
-    {
+    let new_sender_balance = {
         let prev_balance = BALANCES.load(store, &sender).unwrap_or_default();
         let next_balance = sub_u128(prev_balance, delta)?;
 
@@ -53,10 +57,11 @@ pub fn update_ordered_balances(
         } else {
             N_BALANCES.update(store, |n| sub_u64(n, 1u64))?;
         }
-    }
+        next_balance
+    };
 
     // Adjust recipient's entry in ordered balances map
-    {
+    let new_recipient_balance = {
         let prev_balance = BALANCES.load(store, &recipient).unwrap_or_default();
         let next_balance = add_u128(prev_balance, delta)?;
 
@@ -67,11 +72,13 @@ pub fn update_ordered_balances(
                 N_BALANCES.update(store, |n| add_u64(n, 1u64))?;
             }
         }
-    }
+        next_balance
+    };
 
-    Ok(())
+    Ok((new_sender_balance, new_recipient_balance))
 }
 
+// Execute callback on balance change listener contracts
 pub fn notify_balance_change_listeners(
     store: &dyn Storage,
     event: &BalanceChangeEvent,

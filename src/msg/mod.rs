@@ -221,16 +221,20 @@ pub struct BalancesResponse {
 pub enum BalanceChangeEvent {
     Transfer {
         initiator: Addr,
+        initiator_balance: Uint128,
         recipient: Addr,
+        recipient_balance: Uint128,
         amount: Uint128,
     },
     Burn {
         initiator: Addr,
+        initiator_balance: Uint128,
         amount: Uint128,
     },
     Mint {
         initiator: Addr,
         recipient: Addr,
+        recipient_balance: Uint128,
         amount: Uint128,
     },
 }

@@ -21,13 +21,15 @@ pub fn before_mint(
     let recipient = api.addr_validate(&recipient)?;
 
     ensure_accounts_not_frozen(store, None, Some(recipient.to_owned()))?;
-    update_ordered_balance(store, &recipient, delta)?;
+
+    let recipient_balance = update_ordered_balance(store, &recipient, delta)?;
 
     let submsgs = notify_balance_change_listeners(
         store,
         &BalanceChangeEvent::Mint {
             initiator: minter.to_owned(),
             recipient: recipient.to_owned(),
+            recipient_balance,
             amount: delta,
         },
     )?;
@@ -41,7 +43,7 @@ pub fn update_ordered_balance(
     store: &mut dyn Storage,
     address: &Addr,
     delta: Uint128,
-) -> Result<(), ContractError> {
+) -> Result<Uint128, ContractError> {
     let prev_balance = BALANCES.load(store, &address).unwrap_or_default();
     let next_balance = add_u128(prev_balance, delta)?;
 
@@ -53,5 +55,5 @@ pub fn update_ordered_balance(
         }
     }
 
-    Ok(())
+    Ok(next_balance)
 }

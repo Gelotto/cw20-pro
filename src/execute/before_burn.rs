@@ -20,12 +20,14 @@ pub fn before_burn(
     let burner = api.addr_validate(&burner)?;
 
     ensure_accounts_not_frozen(store, Some(burner.to_owned()), None)?;
-    update_ordered_balance(store, &burner, delta)?;
+
+    let initiator_balance = update_ordered_balance(store, &burner, delta)?;
 
     let submsgs = notify_balance_change_listeners(
         store,
         &BalanceChangeEvent::Burn {
             initiator: burner.to_owned(),
+            initiator_balance,
             amount: delta,
         },
     )?;
@@ -39,15 +41,15 @@ fn update_ordered_balance(
     store: &mut dyn Storage,
     burner: &Addr,
     delta: Uint128,
-) -> Result<(), ContractError> {
+) -> Result<Uint128, ContractError> {
     let prev_balance: Uint128 = BALANCES.load(store, burner).unwrap_or_default();
-    let curr_balance = sub_u128(prev_balance, delta)?;
+    let next_balance = sub_u128(prev_balance, delta)?;
 
     ORDERED_BALANCES.remove(store, (prev_balance.u128(), burner));
-    if !curr_balance.is_zero() {
-        ORDERED_BALANCES.save(store, (curr_balance.u128(), burner), &0)?;
+    if !next_balance.is_zero() {
+        ORDERED_BALANCES.save(store, (next_balance.u128(), burner), &0)?;
         N_BALANCES.update(store, |n| sub_u64(n, 1u64))?;
     }
 
-    Ok(())
+    Ok(next_balance)
 }
